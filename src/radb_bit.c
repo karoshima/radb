@@ -2,6 +2,11 @@
  *
  ****************************************************************/
 
+#ifdef TEST
+#include <stdio.h>   // printf()
+#include <assert.h>  // assert()
+#endif // TEST
+
 #include <stdlib.h>  // calloc(), free()
 #include <string.h>  // memcpy()
 #include <errno.h>   // errno
@@ -51,6 +56,125 @@ differentbit(void *bit1,
   return pos;
 }
 
+/****************
+ * struct radix 獲得/解放
+ ****************/
+static struct radix *
+radix_alloc(struct radb *db,
+            void        *key,
+            size_t       bitlen)
+{
+  struct radix *node = malloc(sizeof(*node) + (bitlen/8));
+  if (node == NULL)
+    return NULL;
+
+#ifdef TEST
+  node->db = db;
+  node->next = &(db->queue);
+  node->prev = db->queue.prev;
+  node->next->prev = node->prev->next = node;
+  ++(db->qcount);
+#endif // TEST
+
+  // node->parent = undef;
+  // node->left =   undef;
+  // node->right =  undef;
+  // node->data =   undef;
+  node->bitlen =    bitlen;
+  node->checkbyte = bitlen/8;
+  node->checkbit =  (u_int8_t)0x80 >> (bitlen%8);
+  memcpy(new->key, key, (bitlen+7)/8);
+
+  return node;
+}
+static void
+radix_free(struct radix *node)
+{
+#ifdef TEST
+  node->next->prev = node->prev;
+  node->prev->next = node->next;
+  --(node->db->qcount);
+#endif // TEST
+  free(node);
+}
+
+/****************************************************************/
+#ifdef TEST
+static void
+radix_verify(FILE         *fp,
+             struct radix *node,
+             int          *count)
+{
+  struct radix *path;
+
+  if (node->left != NULL)
+    {
+      assert(node->left->parent == node);
+      node->check = 'l';
+      radix_verify(fp, node->left);
+    }
+
+  if (fp != NULL)
+    {
+      // path を root まで巻き戻す
+      path = node;
+      while (path->parent != NULL)
+        path = path->parent;
+
+      // path->printing に沿って部分木を表示する
+      while (path != node)
+        {
+          if (path->parent == NULL || path->parent->check == path->check)
+            printf("  ");
+          else
+            printf("| ");
+        }
+      if (node->data == NULL)
+        {
+          printf("+-[%p]\n", node);
+          ++(*count);
+        }
+      else
+        prinff("+-[%p] => %p\n", node, node->data);
+    }
+
+  if (node->right != NULL)
+    {
+      assert(node->right->parent == node);
+      node->check = 'r';
+      radix_verify(fp, node->right);
+    }
+
+  node->check = 0;
+}
+
+void
+radb_verify(FILE        *fp,
+            struct radb *db)
+{
+  struct radix *node, *prev, *next;
+  int count;
+
+  for (node = db->queue.next;
+       node != &(db->queue);
+       node = node->next)
+    {
+      assert(node->next->prev == node);  // 確認データそのものの確認
+      assert(node->prev->next == node);
+      node->check = 'X';                 //
+    }
+
+  count = 0;
+  radix_verify(fp, db->root, &count);
+  assert(db->count == count);
+
+  for (node = db->queue.next;
+       node != &(db->queueu);
+       node = node->next)
+    assert(node->check == 0);
+}
+#endif // TEST
+
 /****************************************************************/
 
 /****************
@@ -65,6 +189,9 @@ radb_bit_init(radb_t **dbp)
   db = calloc(1, sizeof(radb_t));
   if (db == NULL)
     return ENOMEM;
+#ifdef TEST
+  db->queue.next = db->queue.predv = &(db->queue);
+#endif
   *dbp = db;
   return 0;
 }
@@ -117,7 +244,7 @@ radb_bit_destroy(radb_t **dbp,
         {
         goup: // 末端だから当該 node を解放して上に戻る
           next = node->parent;
-          free(node);
+          radix_free(node);
         }
       prev = node;
       node = next;
@@ -151,18 +278,13 @@ radb_bit_add(radb_t *db,
   node = db->root;
   if (node == NULL)  // 最初の一個だから、db->root に置く
     {
-      new = malloc(sizeof(*node) + (bitlen/8));
+      new = radix_alloc(key, bitlen);
       if (new == NULL)
         return ENOMEM;
       new->parent =    NULL;
       new->left =      NULL;
       new->right =     NULL;
       new->data =      data;
-      new->bitlen =    bitlen;
-      new->checkbyte = bitlen/8;
-      new->checkbit =  (u_int8_t)0x80 >> (bitlen % 8);
-      new->key[new->checkbyte] = 0;
-      memcpy(new->key, key, (bitlen+7)/8);
       db->root = new;
     }
   else  // radix ツリー内の登録位置を探す
@@ -201,14 +323,10 @@ radb_bit_add(radb_t *db,
         }
       else
         {
-          new = malloc(sizeof(*node) + (bitlen/8));
+          new = radix_alloc(key, bitlen);
           if (new == NULL)
             return ENOMEM;
           new->data =      data;
-          new->bitlen =    bitlen;
-          new->checkbyte = bitlen / 8;
-          new->checkbit =  (u_int8_t)0x80 >> (bitlen % 8);
-          memcpy(new->key, key, (bitlen+7)/8);
 
           // 新規登録データのための新規ノード new を
           // ここで radix ツリーに組み込む
@@ -249,17 +367,13 @@ radb_bit_add(radb_t *db,
           else // new は node の兄弟
             {
               // 分岐のための中間ノードが必要になる
-              branch = malloc(sizeof(*branch) + (diffbit/8));
+              branch = radix_alloc(key, diffbit);
               if (branch == NULL)
                 {
                   free(new);
                   return NULL;
                 }
               branch->data =      NULL;
-              branch->bitlen =    diffbit;
-              branch->checkbyte = diffbit/8;
-              branch->checkbit =  (u_int8_t)0x80 >> (diffbit % 8);
-              memcpy(branch->key, key, (diffbit+7)/8);
 
               if (parent == NULL)
                 db->root =      branch;
