@@ -107,52 +107,13 @@ radix_verify(FILE         *fp,
 {
   struct radix *path;
 
-  if (node->left != NULL)
-    {
-      assert(node->left->parent == node);
-      node->check = 'l';
-      radix_verify(fp, node->left);
-    }
-
-  if (fp != NULL)
-    {
-      // path を root まで巻き戻す
-      path = node;
-      while (path->parent != NULL)
-        path = path->parent;
-
-      // path->printing に沿って部分木を表示する
-      while (path != node)
-        {
-          if (path->parent == NULL || path->parent->check == path->check)
-            printf("  ");
-          else
-            printf("| ");
-        }
-      if (node->data == NULL)
-        {
-          printf("+-[%p]\n", node);
-          ++(*count);
-        }
-      else
-        prinff("+-[%p] => %p\n", node, node->data);
-    }
-
-  if (node->right != NULL)
-    {
-      assert(node->right->parent == node);
-      node->check = 'r';
-      radix_verify(fp, node->right);
-    }
-
-  node->check = 0;
 }
 
 void
 radb_verify(FILE        *fp,
             struct radb *db)
 {
-  struct radix *node, *prev, *next;
+  struct radix *node, *path;
   int count;
 
   for (node = db->queue.next;
@@ -161,11 +122,66 @@ radb_verify(FILE        *fp,
     {
       assert(node->next->prev == node);  // 確認データそのものの確認
       assert(node->prev->next == node);
-      node->check = 'X';                 //
+      node->check = 'X';                 // 各ノードは「未チェック」
     }
 
   count = 0;
-  radix_verify(fp, db->root, &count);
+  node = db->root;
+  while (node != NULL)
+    {
+      switch (node->check)
+        {
+        case 'X':
+          if (node->left != NULL) // 左部分木を先にチェックする
+            {
+              assert(node->left->parent == node);
+              node->check = 'l';
+              node = node->left;
+              break;
+            }
+          // fall through
+        case 'l':
+          if (fp != NULL) // このノードを表示する
+            {
+              path = db->root;      // root から辿り直して、枝を表示する
+              while (path != node)
+                {
+                  if (path->parent == NULL)
+                    fprintf(fp, "  ");
+                  else if (path->parent->check == path->check)
+                    fprintf(fp, "  ");
+                  else
+                    fprintf(fp, "| ");
+                  path = (path->check == 'l') ? path->left : path->right;
+                }
+              fprintf(fp, "+-[%p]", node);  // ノードを表示する
+              if (node->data != NULL)
+                {
+                  fprintf(fp, " => %p", node->data);
+                  ++count;
+                }
+              fprintf(fp, "\n");
+            }
+
+          if (node->right != NULL) // 右の部分木をチェックする
+            {
+              assert(node->right->parent == node);
+              node->check = 'r';
+              node = node->right;
+              break;
+            }
+          // fall through
+        case 'r':
+          node->check = 0;        // チェック完了。親に戻す。
+          node = node->parent;
+          break;
+        default:                  // チェック処理の障害
+          if (fp != NULL)
+            printf(fp, "ILLEGAL CHECK [%p]->check = %d\n", node, node->check);
+          assert(node->check == 'X' || node->check == 'l' || node->check == 'r');
+          break;
+        }
+    }
   assert(db->count == count);
 
   for (node = db->queue.next;
