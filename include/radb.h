@@ -15,7 +15,7 @@
  * alloc this with radb_bit_init()
  * free with radb_bit_destroy()
  ****************/
-typedef struct radb_bit radb_bit_t;
+typedef struct radb radb_t;
 
 /****************
  ****************/

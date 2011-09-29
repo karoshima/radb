@@ -60,9 +60,9 @@ differentbit(void *bit1,
  * struct radix 獲得/解放
  ****************/
 static struct radix *
-radix_alloc(struct radb *db,
-            void        *key,
-            size_t       bitlen)
+radix_alloc(radb_t *db,
+            void   *key,
+            size_t  bitlen)
 {
   struct radix *node = malloc(sizeof(*node) + (bitlen/8));
   if (node == NULL)
@@ -83,7 +83,7 @@ radix_alloc(struct radb *db,
   node->bitlen =    bitlen;
   node->checkbyte = bitlen/8;
   node->checkbit =  (u_int8_t)0x80 >> (bitlen%8);
-  memcpy(new->key, key, (bitlen+7)/8);
+  memcpy(node->key, key, (bitlen+7)/8);
 
   return node;
 }
@@ -100,18 +100,9 @@ radix_free(struct radix *node)
 
 /****************************************************************/
 #ifdef TEST
-static void
-radix_verify(FILE         *fp,
-             struct radix *node,
-             int          *count)
-{
-  struct radix *path;
-
-}
-
 void
-radb_verify(FILE        *fp,
-            struct radb *db)
+radb_verify(FILE   *fp,
+            radb_t *db)
 {
   struct radix *node, *path;
   int count;
@@ -220,7 +211,6 @@ radb_bit_destroy(radb_t **dbp,
                                   void *arg),
                  void *arg)
 {
-  radb_t *db;
   radb_t *db = *dbp;
   radix_t *node = db->root;
   radix_t *prev, *next;
@@ -294,14 +284,14 @@ radb_bit_add(radb_t *db,
   node = db->root;
   if (node == NULL)  // 最初の一個だから、db->root に置く
     {
-      new = radix_alloc(key, bitlen);
+      new = radix_alloc(db, key, bitlen);
       if (new == NULL)
         return ENOMEM;
-      new->parent =    NULL;
-      new->left =      NULL;
-      new->right =     NULL;
-      new->data =      data;
-      db->root = new;
+      new->parent = NULL;
+      new->left =   NULL;
+      new->right =  NULL;
+      new->data =   data;
+      db->root =    new;
     }
   else  // radix ツリー内の登録位置を探す
     {
@@ -339,10 +329,10 @@ radb_bit_add(radb_t *db,
         }
       else
         {
-          new = radix_alloc(key, bitlen);
+          new = radix_alloc(db, key, bitlen);
           if (new == NULL)
             return ENOMEM;
-          new->data =      data;
+          new->data = data;
 
           // 新規登録データのための新規ノード new を
           // ここで radix ツリーに組み込む
@@ -367,7 +357,7 @@ radb_bit_add(radb_t *db,
                 parent->right = new;
 
               new->parent = parent;
-              if ((node->key[checkbyte] & checkbit) == 0)
+              if ((node->key[new->checkbyte] & new->checkbit) == 0)
                 {
                   new->left =  node;
                   new->right = NULL;
@@ -383,11 +373,11 @@ radb_bit_add(radb_t *db,
           else // new は node の兄弟
             {
               // 分岐のための中間ノードが必要になる
-              branch = radix_alloc(key, diffbit);
+              branch = radix_alloc(db, key, diffbit);
               if (branch == NULL)
                 {
                   free(new);
-                  return NULL;
+                  return ENOMEM;
                 }
               branch->data =      NULL;
 
