@@ -1,26 +1,19 @@
 ################################################################
 
-TARGET = radb.a
-OBJS =   radb_bit.o
+TARGET = radb_test
+OBJS =   sut.o
+LIBS =   ../src/radb.a
 
-MKOPT =  mkopt.h
-SRCS =   $(OBJS:.o=.c) $(MKOPT)
-
-CFLAGS +=   -g -Wall
-CPPFLAGS += 
+CFLAGS += -g -Wall
 
 all: $(TARGET)
 
 clean:
-	rm -f $(OBJS) $(MKOPT) *~ .depend
-
-test:
-	$(MAKE) clean
-	echo "#define TEST" > $(MKOPT)
-	$(MAKE) all
-	$(MAKE) $(MKOPT)
+	rm -f $(OBJS) *~ .depend
 
 ################################################################
+
+SRCS =   $(OBJS:.o=.c)
 
 depend .depend: $(SRCS)
 	$(CC) $(CPPFLAGS) $(CFLAGS) -M $(SRCS) > .depend
@@ -31,12 +24,14 @@ endif
 
 ################################################################
 
-$(TARGET): $(OBJS)
-	rm -f $(TARGET)
-	ar ruvs $@ $(OBJS)
+$(TARGET): $(OBJS) $(LIBS)
+	$(CC) $(LDFLAGS) $(OBJS) $(LIBS) -o $@
 
-$(MKOPT)::
-	cp /dev/null $@
+$(LIBS)::
+	cd ../src; $(MAKE) test
+
+$(OBJS): $(SRCS)
+	$(CC) $(CPPFLAGS) $(CFLAGS) -c $<
 
 ################################################################
 

@@ -13,25 +13,25 @@ typedef struct radix
   struct radix *prev;
   int           check;
 #endif // TEST
-  struct radix *parent;    // radix $B%D%j!<$N?F(B
-  struct radix *left;      // radix $B%D%j!<$N:8$N;R(B
-  struct radix *right;     // radix $B%D%j!<$N1&$N;R(B
-  void         *data;      // $BEPO?$5$l$F$$$k%G!<%?(B
-  u_int32_t     bitlen;    // $B%-!<$N%S%C%HD9(B
-  u_int32_t     checkbyte; // $B%-!<$N%A%'%C%/BP>]%S%C%H(B
-  u_int8_t      checkbit;  // $B%-!<$N%A%'%C%/BP>]%S%C%H$N$_(B 1
-  u_int8_t      key[1];    // $B%-!<(B ($B2DJQD9%G!<%?(B)
+  struct radix *parent;    // radix ¥Ä¥ê¡¼¤Î¿Æ
+  struct radix *left;      // radix ¥Ä¥ê¡¼¤Îº¸¤Î»Ò
+  struct radix *right;     // radix ¥Ä¥ê¡¼¤Î±¦¤Î»Ò
+  void         *data;      // ÅÐÏ¿¤µ¤ì¤Æ¤¤¤ë¥Ç¡¼¥¿
+  u_int32_t     bitlen;    // ¥­¡¼¤Î¥Ó¥Ã¥ÈÄ¹
+  u_int32_t     checkbyte; // ¥­¡¼¤Î¥Á¥§¥Ã¥¯ÂÐ¾Ý¥Ó¥Ã¥È
+  u_int8_t      checkbit;  // ¥­¡¼¤Î¥Á¥§¥Ã¥¯ÂÐ¾Ý¥Ó¥Ã¥È¤Î¤ß 1
+  u_int8_t      key[1];    // ¥­¡¼ (²ÄÊÑÄ¹¥Ç¡¼¥¿)
 } radix_t;
 
 struct radb
 {
 #ifdef TEST
-  struct radix  queue;    // $B3NG'MQ%N!<%I%j%9%H(B
-  int           qcount;   // $B%N!<%I?t(B
+  struct radix  queue;    // ³ÎÇ§ÍÑ¥Î¡¼¥É¥ê¥¹¥È
+  int           qcount;   // ¥Î¡¼¥É¿ô
 #endif // TEST
-  struct radix *root;     // radix $B%D%j!<(B
-  u_int32_t     count;    // $BEPO?%G!<%??t(B
-  u_int32_t     unitlen;  // $B8GDjD9%-!<$N%-!<D9(B
+  struct radix *root;     // radix ¥Ä¥ê¡¼
+  u_int32_t     count;    // ÅÐÏ¿¥Ç¡¼¥¿¿ô
+  u_int32_t     unitlen;  // ¸ÇÄêÄ¹¥­¡¼¤Î¥­¡¼Ä¹
 };
 
 /*

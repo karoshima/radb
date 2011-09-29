@@ -17,7 +17,7 @@
 /****************************************************************/
 
 /****************
- * $B@hF,$+$i2?(B bit $BL\$,IT0lCW$J$N$+(B
+ * ÀèÆ¬¤«¤é²¿ bit ÌÜ¤¬ÉÔ°ìÃ×¤Ê¤Î¤«
  ****************/
 static unsigned int
 differentbit(void *bit1,
@@ -57,7 +57,7 @@ differentbit(void *bit1,
 }
 
 /****************
- * struct radix $B3MF@(B/$B2rJ|(B
+ * struct radix ³ÍÆÀ/²òÊü
  ****************/
 static struct radix *
 radix_alloc(radb_t *db,
@@ -106,16 +106,100 @@ radb_verify(FILE   *fp,
 {
   struct radix *node, *path;
   int count;
+  int idx;
+  char buf[10];
+
+  static const char *bits[] = {
+    " 00000000", " 00000001", " 00000010", " 00000011",
+    " 00000100", " 00000101", " 00000110", " 00000111",
+    " 00001000", " 00001001", " 00001010", " 00001011",
+    " 00001100", " 00001101", " 00001110", " 00001111",
+    " 00010000", " 00010001", " 00010010", " 00010011",
+    " 00010100", " 00010101", " 00010110", " 00010111",
+    " 00011000", " 00011001", " 00011010", " 00011011",
+    " 00011100", " 00011101", " 00011110", " 00011111",
+    " 00100000", " 00100001", " 00100010", " 00100011",
+    " 00100100", " 00100101", " 00100110", " 00100111",
+    " 00101000", " 00101001", " 00101010", " 00101011",
+    " 00101100", " 00101101", " 00101110", " 00101111",
+    " 00110000", " 00110001", " 00110010", " 00110011",
+    " 00110100", " 00110101", " 00110110", " 00110111",
+    " 00111000", " 00111001", " 00111010", " 00111011",
+    " 00111100", " 00111101", " 00111110", " 00111111",
+    " 01000000", " 01000001", " 01000010", " 01000011",
+    " 01000100", " 01000101", " 01000110", " 01000111",
+    " 01001000", " 01001001", " 01001010", " 01001011",
+    " 01001100", " 01001101", " 01001110", " 01001111",
+    " 01010000", " 01010001", " 01010010", " 01010011",
+    " 01010100", " 01010101", " 01010110", " 01010111",
+    " 01011000", " 01011001", " 01011010", " 01011011",
+    " 01011100", " 01011101", " 01011110", " 01011111",
+    " 01100000", " 01100001", " 01100010", " 01100011",
+    " 01100100", " 01100101", " 01100110", " 01100111",
+    " 01101000", " 01101001", " 01101010", " 01101011",
+    " 01101100", " 01101101", " 01101110", " 01101111",
+    " 01110000", " 01110001", " 01110010", " 01110011",
+    " 01110100", " 01110101", " 01110110", " 01110111",
+    " 01111000", " 01111001", " 01111010", " 01111011",
+    " 01111100", " 01111101", " 01111110", " 01111111",
+    " 10000000", " 10000001", " 10000010", " 10000011",
+    " 10000100", " 10000101", " 10000110", " 10000111",
+    " 10001000", " 10001001", " 10001010", " 10001011",
+    " 10001100", " 10001101", " 10001110", " 10001111",
+    " 10010000", " 10010001", " 10010010", " 10010011",
+    " 10010100", " 10010101", " 10010110", " 10010111",
+    " 10011000", " 10011001", " 10011010", " 10011011",
+    " 10011100", " 10011101", " 10011110", " 10011111",
+    " 10100000", " 10100001", " 10100010", " 10100011",
+    " 10100100", " 10100101", " 10100110", " 10100111",
+    " 10101000", " 10101001", " 10101010", " 10101011",
+    " 10101100", " 10101101", " 10101110", " 10101111",
+    " 10110000", " 10110001", " 10110010", " 10110011",
+    " 10110100", " 10110101", " 10110110", " 10110111",
+    " 10111000", " 10111001", " 10111010", " 10111011",
+    " 10111100", " 10111101", " 10111110", " 10111111",
+    " 11000000", " 11000001", " 11000010", " 11000011",
+    " 11000100", " 11000101", " 11000110", " 11000111",
+    " 11001000", " 11001001", " 11001010", " 11001011",
+    " 11001100", " 11001101", " 11001110", " 11001111",
+    " 11010000", " 11010001", " 11010010", " 11010011",
+    " 11010100", " 11010101", " 11010110", " 11010111",
+    " 11011000", " 11011001", " 11011010", " 11011011",
+    " 11011100", " 11011101", " 11011110", " 11011111",
+    " 11100000", " 11100001", " 11100010", " 11100011",
+    " 11100100", " 11100101", " 11100110", " 11100111",
+    " 11101000", " 11101001", " 11101010", " 11101011",
+    " 11101100", " 11101101", " 11101110", " 11101111",
+    " 11110000", " 11110001", " 11110010", " 11110011",
+    " 11110100", " 11110101", " 11110110", " 11110111",
+    " 11111000", " 11111001", " 11111010", " 11111011",
+    " 11111100", " 11111101", " 11111110", " 11111111" };
+
+  if (fp != NULL)
+    {
+      fprintf(fp, "[radb %p]\n", db);
+      if (db == NULL)
+        return;
+      fprintf(fp, "    %p->root =    %p\n", db, db->root);
+      fprintf(fp, "    %p->count =   %u\n", db, db->count);
+      fprintf(fp, "    %p->unitlen = %u\n", db, db->unitlen);
+    }
+  else
+    {
+      if (db == NULL)
+        return;
+    }
 
   for (node = db->queue.next;
        node != &(db->queue);
        node = node->next)
     {
-      assert(node->next->prev == node);  // $B3NG'%G!<%?$=$N$b$N$N3NG'(B
+      assert(node->next->prev == node);  // ³ÎÇ§¥Ç¡¼¥¿¤½¤Î¤â¤Î¤Î³ÎÇ§
       assert(node->prev->next == node);
-      node->check = 'X';                 // $B3F%N!<%I$O!VL$%A%'%C%/!W(B
+      node->check = 'X';                 // ³Æ¥Î¡¼¥É¤Ï¡ÖÌ¤¥Á¥§¥Ã¥¯¡×
     }
 
+  fprintf(fp, "[radixtree]\n");
   count = 0;
   node = db->root;
   while (node != NULL)
@@ -123,7 +207,7 @@ radb_verify(FILE   *fp,
       switch (node->check)
         {
         case 'X':
-          if (node->left != NULL) // $B:8ItJ,LZ$r@h$K%A%'%C%/$9$k(B
+          if (node->left != NULL) // º¸ÉôÊ¬ÌÚ¤òÀè¤Ë¥Á¥§¥Ã¥¯¤¹¤ë
             {
               assert(node->left->parent == node);
               node->check = 'l';
@@ -132,9 +216,9 @@ radb_verify(FILE   *fp,
             }
           // fall through
         case 'l':
-          if (fp != NULL) // $B$3$N%N!<%I$rI=<($9$k(B
+          if (fp != NULL) // ¤³¤Î¥Î¡¼¥É¤òÉ½¼¨¤¹¤ë
             {
-              path = db->root;      // root $B$+$iC)$jD>$7$F!";^$rI=<($9$k(B
+              path = db->root;      // root ¤«¤éÃ©¤êÄ¾¤·¤Æ¡¢»Þ¤òÉ½¼¨¤¹¤ë
               while (path != node)
                 {
                   if (path->parent == NULL)
@@ -145,7 +229,32 @@ radb_verify(FILE   *fp,
                     fprintf(fp, "| ");
                   path = (path->check == 'l') ? path->left : path->right;
                 }
-              fprintf(fp, "+-[%p]", node);  // $B%N!<%I$rI=<($9$k(B
+              fprintf(fp, "+-[%p]", node);  // ¥Î¡¼¥É¤òÉ½¼¨¤¹¤ë
+              for (idx = 0;  idx < node->checkbyte; ++idx) // ¥­¡¼¤òÉ½¼¨¤¹¤ë
+                fprintf(fp, "%s", bits[node->key[idx]]);
+              memcpy(buf, bits[node->key[idx]], 8);
+              switch (node->checkbit)
+                {
+                case 0x80: buf[0] = 0; break;
+                case 0x40: buf[2] = 0; break;
+                case 0x20: buf[3] = 0; break;
+                case 0x10: buf[4] = 0; break;
+                case 0x08: buf[5] = 0; break;
+                case 0x04: buf[6] = 0; break;
+                case 0x02: buf[7] = 0; break;
+                case 0x01: buf[8] = 0; break;
+                default:
+                  assert(node->checkbit == 0x80
+                         || node->checkbit == 0x40
+                         || node->checkbit == 0x20
+                         || node->checkbit == 0x10
+                         || node->checkbit == 0x08
+                         || node->checkbit == 0x04
+                         || node->checkbit == 0x02
+                         || node->checkbit == 0x01);
+                  break;
+                }
+              fprintf(fp, "%s/%u", buf, node->bitlen);
               if (node->data != NULL)
                 {
                   fprintf(fp, " => %p", node->data);
@@ -154,7 +263,7 @@ radb_verify(FILE   *fp,
               fprintf(fp, "\n");
             }
 
-          if (node->right != NULL) // $B1&$NItJ,LZ$r%A%'%C%/$9$k(B
+          if (node->right != NULL) // ±¦¤ÎÉôÊ¬ÌÚ¤ò¥Á¥§¥Ã¥¯¤¹¤ë
             {
               assert(node->right->parent == node);
               node->check = 'r';
@@ -163,10 +272,10 @@ radb_verify(FILE   *fp,
             }
           // fall through
         case 'r':
-          node->check = 0;        // $B%A%'%C%/40N;!#?F$KLa$9!#(B
+          node->check = 0;        // ¥Á¥§¥Ã¥¯´°Î»¡£¿Æ¤ËÌá¤¹¡£
           node = node->parent;
           break;
-        default:                  // $B%A%'%C%/=hM}$N>c32(B
+        default:                  // ¥Á¥§¥Ã¥¯½èÍý¤Î¾ã³²
           if (fp != NULL)
             fprintf(fp, "ILLEGAL CHECK [%p]->check = %d\n", node, node->check);
           assert(node->check == 'X' || node->check == 'l' || node->check == 'r');
@@ -230,25 +339,25 @@ radb_bit_destroy(radb_t **dbp,
       if (node->data != NULL && callback != NULL)
         callback(node->data, arg);
 
-      if (prev == node->parent) // $B>e$+$i9_$j$F$-$?(B
+      if (prev == node->parent) // ¾å¤«¤é¹ß¤ê¤Æ¤­¤¿
         {
           if (node->left != NULL)
-            next = node->left;  // $B:8%D%j!<$r2rJ|$9$k(B
+            next = node->left;  // º¸¥Ä¥ê¡¼¤ò²òÊü¤¹¤ë
           else if (node->right != NULL)
-            next = node->right; // $B1&%D%j!<$r2rJ|$9$k(B
+            next = node->right; // ±¦¥Ä¥ê¡¼¤ò²òÊü¤¹¤ë
           else
-            goto goup; // $BKvC<(B
+            goto goup; // ËöÃ¼
         }
-      else if (prev == node->left) // $B:8$+$iLa$C$F$-$?(B
+      else if (prev == node->left) // º¸¤«¤éÌá¤Ã¤Æ¤­¤¿
         {
           if (node->right != NULL)
-            next = node->right; // $B1&%D%j!<$r2rJ|$9$k(B
+            next = node->right; // ±¦¥Ä¥ê¡¼¤ò²òÊü¤¹¤ë
           else
-            goto goup; // $BKvC<(B
+            goto goup; // ËöÃ¼
         }
-      else // $B1&$+$iLa$C$F$-$?(B
+      else // ±¦¤«¤éÌá¤Ã¤Æ¤­¤¿
         {
-        goup: // $BKvC<$@$+$iEv3:(B node $B$r2rJ|$7$F>e$KLa$k(B
+        goup: // ËöÃ¼¤À¤«¤éÅö³º node ¤ò²òÊü¤·¤Æ¾å¤ËÌá¤ë
           next = node->parent;
           radix_free(node);
         }
@@ -272,7 +381,7 @@ radb_bit_add(radb_t *db,
   u_int8_t *key = vkey;
   unsigned int diffbit;
 
-  // $B%Q%i%a%?%A%'%C%/(B
+  // ¥Ñ¥é¥á¥¿¥Á¥§¥Ã¥¯
   if (db == NULL)
     return EINVAL;
   if (bitlen < 0)
@@ -280,9 +389,9 @@ radb_bit_add(radb_t *db,
   if (bitlen > 0 && key == NULL)
     return EINVAL;
 
-  // $BEPO?>l=j$N3NG'$HEPO?(B
+  // ÅÐÏ¿¾ì½ê¤Î³ÎÇ§¤ÈÅÐÏ¿
   node = db->root;
-  if (node == NULL)  // $B:G=i$N0l8D$@$+$i!"(Bdb->root $B$KCV$/(B
+  if (node == NULL)  // ºÇ½é¤Î°ì¸Ä¤À¤«¤é¡¢db->root ¤ËÃÖ¤¯
     {
       new = radix_alloc(db, key, bitlen);
       if (new == NULL)
@@ -293,37 +402,37 @@ radb_bit_add(radb_t *db,
       new->data =   data;
       db->root =    new;
     }
-  else  // radix $B%D%j!<Fb$NEPO?0LCV$rC5$9(B
+  else  // radix ¥Ä¥ê¡¼Æâ¤ÎÅÐÏ¿°ÌÃÖ¤òÃµ¤¹
     {
-      // $B%S%C%H$@$18+$F%D%j!<$r9_$j$k(B
-      // ($B$"$H$G%-!<A4BN$r%A%'%C%/$7$F4,$-La$9(B)
+      // ¥Ó¥Ã¥È¤À¤±¸«¤Æ¥Ä¥ê¡¼¤ò¹ß¤ê¤ë
+      // (¤¢¤È¤Ç¥­¡¼Á´ÂÎ¤ò¥Á¥§¥Ã¥¯¤·¤Æ´¬¤­Ìá¤¹)
       while (node != NULL && node->bitlen <= bitlen)
         {
           parent = node;
           node = (key[parent->checkbyte] & parent->checkbit) == 0
             ? parent->left : parent->right;
         }
-      // $B%-!<A4BN$r%A%'%C%/$7$F4,$-La$9(B
+      // ¥­¡¼Á´ÂÎ¤ò¥Á¥§¥Ã¥¯¤·¤Æ´¬¤­Ìá¤¹
       diffbit = differentbit(key, parent->key, parent->bitlen);
       if (diffbit > parent->bitlen)
         diffbit = parent->bitlen;
-      while (parent != NULL && parent->bitlen > diffbit)
+      while (parent != NULL && parent->bitlen >= diffbit)
         {
           node = parent;
           parent = node->parent;
         }
-      // $B$3$l$K$h$k7k2L$O0J2<$N$H$*$j$H$J$k(B
-      // node:    $BEPO?0LCV6aK5$N%N!<%I(B
-      // parent:  $B6aK5%N!<%I(B node $B$N?F(B
-      // diffbit: $B6aK5%N!<%I(B node $B$H?75,EPO?%-!<$N?)$$0c$$0LCV(B ($BC10L(Bbit)
+      // ¤³¤ì¤Ë¤è¤ë·ë²Ì¤Ï°Ê²¼¤Î¤È¤ª¤ê¤È¤Ê¤ë
+      // node:    ÅÐÏ¿°ÌÃÖ¶áËµ¤Î¥Î¡¼¥É
+      // parent:  ¶áËµ¥Î¡¼¥É node ¤Î¿Æ
+      // diffbit: ¶áËµ¥Î¡¼¥É node ¤È¿·µ¬ÅÐÏ¿¥­¡¼¤Î¿©¤¤°ã¤¤°ÌÃÖ (Ã±°Ìbit)
 
-      // $BEPO?0LCV$N3NG'$*$h$S%D%j!<$X$NAH$_9~$_(B
+      // ÅÐÏ¿°ÌÃÖ¤Î³ÎÇ§¤ª¤è¤Ó¥Ä¥ê¡¼¤Ø¤ÎÁÈ¤ß¹þ¤ß
       if (diffbit == bitlen && diffbit == node->bitlen)
         {
-          // $B$3$3$,$^$5$K%G!<%?EPO?2U=j(B
-          // node $B$r$=$N$^$^;H$&(B
+          // ¤³¤³¤¬¤Þ¤µ¤Ë¥Ç¡¼¥¿ÅÐÏ¿²Õ½ê
+          // node ¤ò¤½¤Î¤Þ¤Þ»È¤¦
           if (node->data != NULL)
-            return EEXIST;  // $B=EJ#EPO?IT2D(B
+            return EEXIST;  // ½ÅÊ£ÅÐÏ¿ÉÔ²Ä
           new = node;
           new->data = data;
         }
@@ -334,9 +443,9 @@ radb_bit_add(radb_t *db,
             return ENOMEM;
           new->data = data;
 
-          // $B?75,EPO?%G!<%?$N$?$a$N?75,%N!<%I(B new $B$r(B
-          // $B$3$3$G(B radix $B%D%j!<$KAH$_9~$`(B
-          if (diffbit == node->bitlen) // new $B$O(B node $B$N=i=P$N;R(B
+          // ¿·µ¬ÅÐÏ¿¥Ç¡¼¥¿¤Î¤¿¤á¤Î¿·µ¬¥Î¡¼¥É new ¤ò
+          // ¤³¤³¤Ç radix ¥Ä¥ê¡¼¤ËÁÈ¤ß¹þ¤à
+          if (diffbit == node->bitlen) // new ¤Ï node ¤Î½é½Ð¤Î»Ò
             {
               if ((key[node->checkbyte] & node->checkbit) == 0)
                 node->left =  new;
@@ -347,7 +456,7 @@ radb_bit_add(radb_t *db,
               new->left =   NULL;
               new->right =  NULL;
             }
-          else if (diffbit == bitlen) // new $B$O(B node $B$N?F(B
+          else if (diffbit == bitlen) // new ¤Ï node ¤Î¿Æ
             {
               if (parent == NULL)
                 db->root =      new;
@@ -370,9 +479,9 @@ radb_bit_add(radb_t *db,
 
               node->parent = new;
             }
-          else // new $B$O(B node $B$N7;Do(B
+          else // new ¤Ï node ¤Î·»Äï
             {
-              // $BJ,4t$N$?$a$NCf4V%N!<%I$,I,MW$K$J$k(B
+              // Ê¬´ô¤Î¤¿¤á¤ÎÃæ´Ö¥Î¡¼¥É¤¬É¬Í×¤Ë¤Ê¤ë
               branch = radix_alloc(db, key, diffbit);
               if (branch == NULL)
                 {
