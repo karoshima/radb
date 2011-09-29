@@ -2,16 +2,16 @@
  *
  ****************************************************************/
 
-#ifdef TEST
-#include <stdio.h>   // printf()
-#include <assert.h>  // assert()
-#endif // TEST
-
 #include <stdlib.h>  // calloc(), free()
 #include <string.h>  // memcpy()
 #include <errno.h>   // errno
 
 #include "config.h"
+
+#ifdef TEST
+#include <stdio.h>   // printf()
+#include <assert.h>  // assert()
+#endif // TEST
 
 
 /****************************************************************/
@@ -168,7 +168,7 @@ radb_verify(FILE   *fp,
           break;
         default:                  // チェック処理の障害
           if (fp != NULL)
-            printf(fp, "ILLEGAL CHECK [%p]->check = %d\n", node, node->check);
+            fprintf(fp, "ILLEGAL CHECK [%p]->check = %d\n", node, node->check);
           assert(node->check == 'X' || node->check == 'l' || node->check == 'r');
           break;
         }
@@ -176,7 +176,7 @@ radb_verify(FILE   *fp,
   assert(db->count == count);
 
   for (node = db->queue.next;
-       node != &(db->queueu);
+       node != &(db->queue);
        node = node->next)
     assert(node->check == 0);
 }
@@ -197,7 +197,7 @@ radb_bit_init(radb_t **dbp)
   if (db == NULL)
     return ENOMEM;
 #ifdef TEST
-  db->queue.next = db->queue.predv = &(db->queue);
+  db->queue.next = db->queue.prev = &(db->queue);
 #endif
   *dbp = db;
   return 0;

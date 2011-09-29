@@ -12,14 +12,15 @@ CPPFLAGS +=
 all: $(TARGET)
 
 clean:
-	rm -f $(OBJS) *~ .depend
+	rm -f $(OBJS) $(MKOPT) *~ .depend
 
 test:
+	$(MAKE) clean
 	echo "#define TEST" > $(MKOPT)
-	$(MAKE) clean
 	$(MAKE) all
-	$(MAKE) clean
 	$(MAKE) $(MKOPT)
+
+################################################################
 
 depend .depend: $(SRCS)
 	$(CC) $(CPPFLAGS) $(CFLAGS) -M $(SRCS) > .depend
@@ -28,9 +29,21 @@ ifeq (.depend,$(wildcard .depend))
 include .depend
 endif
 
+################################################################
+
 $(TARGET): $(OBJS)
 	rm -f $(TARGET)
-	ar ruvs $(TARGET) $(OBJS)
+	ar ruvs $@ $(OBJS)
 
 $(MKOPT):
-	cp /dev/null $(MKOPT)
+	cp /dev/null $@
+
+################################################################
+
+.SUFFIXES: .c .h .i .s .o .a
+
+.c.i:
+	$(CC) $(CPPFLAGS) $(CFLAGS) -E $< -o $@
+
+.c.s:
+	$(CC) $(CPPFLAGS) $(CFLAGS) -S $<
